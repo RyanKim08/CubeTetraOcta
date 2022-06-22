@@ -6,6 +6,9 @@
         attribute vec4 vColor;
         varying vec4 fColor;
         uniform vec3 theta;
+        uniform mat4 transMat;
+        uniform mat4 scaleMat;
+
         void main()
         {
             // Compute the sines and cosines of theta for each of
@@ -29,7 +32,7 @@
                             0.0,  0.0, 0.0, 1.0 );
 
             fColor = vColor;
-            gl_Position = rz * ry * rx * vPosition;
+            gl_Position = transMat * rz * ry * rx * scaleMat * vPosition;
         }
     </script>
 
@@ -60,5 +63,27 @@
     <button id="xButton" style="background: #FFF">Rotate X</button>
     <button id="yButton" style="background: #FFF">Rotate Y</button>
     <button id="zButton" style="background: #FFF">Rotate Z</button>
+    <br />
+    <button id="sCube" style="background: #FFF">Stop Cube</button>
+    <button id="sTetra" style="background: #FFF">Stop Tetrahedron</button>
+    <button id="sOcta" style="background: #FFF">Stop Octahedron</button>
+    <br />
+    <div>
+        Cube Scale: 1
+        <input id="cSlider" type="range" min="1" max="5" value="4" />
+        5
+    </div>
+    <br />
+    <div>
+        Tetrahedron Scale: 1
+        <input id="tSlider" type="range" min="1" max="5" value="4" />
+        5
+    </div>
+    <br />
+    <div>
+        Tetrahedron Scale: 1
+        <input id="oSlider" type="range" min="1" max="5" value="4" />
+        5
+    </div>
 </body>
 </html>

@@ -7,9 +7,6 @@ var gl;
 var points = [];
 var colors = [];
 
-// 0 = cube; 1 = tetrahedron; 2 = octahedron
-var whShape = 0;
-
 // Axes: 0 = x; 1 = y; 2 = z
 var xAxis = 0;
 var yAxis = 1;
@@ -20,6 +17,36 @@ var axis = 0;
 // Array of angles: 0 = x; 1 = y; 2 = z
 var theta = [0, 0, 0];
 var thetaLoc;
+
+var transMat;
+var transMatLoc;
+
+var scaleMat;
+var scaleMatLoc;
+
+var transMatCube;
+var transMatTetra;
+var transMatOcta;
+
+var cubeScale = 1.0;
+var tetraScale = 1.0;
+var octaScale = 1.0;
+
+var cubeOff = [-0.5, 0.4, 0.0];
+var tetraOff = [0.5, 0.4, 0.0];
+var octaOff = [0.0, -0.5, 0.0];
+
+var cTheta = [0, 0, 0];
+var tTheta = [0, 0, 0];
+var oTheta = [0, 0, 0];
+
+var cSpinning = true;
+var tSpinning = true;
+var oSpinning = true;
+
+var totCubePts = 0;
+var totTetraPts = 0;
+var totOctaPts = 0;
 
 var cBuffer;
 var vBuffer;
@@ -39,18 +66,17 @@ window.onload = function init() {
 
     // --------------- Load shaders and initialize attribute buffers
 
-    if (whShape == 0) {
-        // --------------- Cube --------------------------
-        colorCube();
-    }
-    else if (whShape == 1) {
-        // --------------- Tetrahedron -------------------
-        colorTetra();
-    }
-    else if (whShape == 2) {
-        // --------------- Octahedron --------------------
-        colorOcta();
-    }
+    // ---------- Initialize Cube Vertices --------------
+    colorCube();
+    // ------ Initialize Tetrahedron Vertices -----------
+    colorTetra();
+    // ------- Initialize Octahedron Vertices -----------
+    colorOcta();
+
+    // ------- Create Translation Matrices -----------
+    transMatCube = translate(cubeOff[0], cubeOff[1], cubeOff[2]);
+    transMatTetra = translate(tetraOff[0], tetraOff[1], tetraOff[2]);
+    transMatOcta = translate(octaOff[0], octaOff[1], octaOff[2]);
 
     // Create a buffer object, initialise it, and associate it 
     // with the associated attribute variable in our vertex shader
@@ -99,6 +125,46 @@ window.onload = function init() {
         document.getElementById('xButton').style.background = '#FFF';
         document.getElementById('yButton').style.background = '#FFF';
     };
+
+    transMatLoc = gl.getUniformLocation(program, "transMat");
+    scaleMatLoc = gl.getUniformLocation(program, "scaleMat");
+
+    cubeScale = Number(document.getElementById("cSlider").value);
+    tetraScale = Number(document.getElementById("tSlider").value);
+    octaScale = Number(document.getElementById("oSlider").value);
+
+    document.getElementById("sCube").onclick = function () {
+        cSpinning = !cSpinning;
+        document.getElementById("sCube").innerText =
+            (cSpinning) ? "Stop Cube" : "Start Cube";
+    };
+
+    document.getElementById("cSlider").onchange =
+        function (event) {
+            cubeScale = Number(event.target.value);
+        };
+
+    document.getElementById("sTetra").onclick = function () {
+        cSpinning = !cSpinning;
+        document.getElementById("sTetra").innerText =
+            (cSpinning) ? "Stop Tetrahedron" : "Start Tetrahedron";
+    };
+
+    document.getElementById("tSlider").onchange =
+        function (event) {
+            cubeScale = Number(event.target.value);
+        };
+
+    document.getElementById("sOcta").onclick = function () {
+        cSpinning = !cSpinning;
+        document.getElementById("sOcta").innerText =
+            (cSpinning) ? "Stop Octahedron" : "Start Octahedron";
+    };
+
+    document.getElementById("oSlider").onchange =
+        function (event) {
+            cubeScale = Number(event.target.value);
+        };
 
     render();
 }
@@ -151,6 +217,7 @@ function square(a, b, c, d) {
 
         //for solid colored faces use 
         colors.push(vertexColors[c]);
+        ++totCubePts;
     }
 }
 
@@ -184,6 +251,7 @@ function makeTetra(a, b, c, color) {
     points.push(b);
     colors.push(baseColors[color]);
     points.push(c);
+    totTetraPts += 3;
 }
 
 function tetra(p, q, r, s) {
@@ -228,6 +296,7 @@ function makeOcta(a, b, c, color) {
     points.push(b);
     colors.push(baseColors[color]);
     points.push(c);
+    totOctaPts += 3;
 }
 
 function octa(a, b, c, d, e, f) {
@@ -247,10 +316,38 @@ function octa(a, b, c, d, e, f) {
 function render() {
     gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
 
-    theta[axis] += 2.0;
-    gl.uniform3fv(thetaLoc, theta);
+    scaleMat = scalem(cubeScale / 4, cubeScale / 4, cubeScale / 4);
+    gl.uniformMatrix4fv(scaleMatLoc, false, flatten(scaleMat));
+    if (cSpinning)
+        cTheta[axis] += 2.0;
+    gl.uniform3fv(thetaLoc, cTheta);
 
-    gl.drawArrays(gl.TRIANGLES, 0, points.length);
+    transMat = transMatCube;
+    gl.uniformMatrix4fv(transMatLoc, false, flatten(transMat));
+    // Render cube
+    gl.drawArrays(gl.TRIANGLES, 0, totCubePts);
+
+    scaleMat = scalem(tetraScale / 4, tetraScale / 4, tetraScale / 4);
+    gl.uniformMatrix4fv(scaleMatLoc, false, flatten(scaleMat));
+    if (tSpinning)
+        tTheta[axis] += 2.0;
+    gl.uniform3fv(thetaLoc, tTheta);
+
+    transMat = transMatTetra;
+    gl.uniformMatrix4fv(transMatLoc, false, flatten(transMat));
+    // Render tetrahedron
+    gl.drawArrays(gl.TRIANGLES, totCubePts, totTetraPts);
+
+    scaleMat = scalem(octaScale / 4, octaScale / 4, octaScale / 4);
+    gl.uniformMatrix4fv(scaleMatLoc, false, flatten(scaleMat));
+    if (oSpinning)
+        oTheta[axis] += 2.0;
+    gl.uniform3fv(thetaLoc, oTheta);
+
+    transMat = transMatOcta;
+    gl.uniformMatrix4fv(transMatLoc, false, flatten(transMat));
+    // Render octahedron
+    gl.drawArrays(gl.TRIANGLES, totCubePts + totTetraPts, totOctaPts);
 
     requestAnimationFrame(render);
 }
